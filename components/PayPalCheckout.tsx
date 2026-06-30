@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, Copy, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle2, Copy, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 declare global {
@@ -32,6 +32,8 @@ const PLAN_LABELS: Record<Plan, string> = {
   bundle: "Launch bundle - $19",
   team: "Tiny team - $39"
 };
+
+const LICENSE_STORAGE_KEY = "creatorcsv_unlock_code";
 
 export function PayPalCheckout({ clientId, currency }: PayPalCheckoutProps) {
   const [email, setEmail] = useState("");
@@ -109,6 +111,7 @@ export function PayPalCheckout({ clientId, currency }: PayPalCheckoutProps) {
               const payload = (await response.json()) as CaptureResponse;
               setMessage(payload.message);
               if (payload.ok && payload.licenseCode) {
+                window.localStorage.setItem(LICENSE_STORAGE_KEY, payload.licenseCode);
                 setLicenseCode(payload.licenseCode);
               }
             },
@@ -186,6 +189,10 @@ export function PayPalCheckout({ clientId, currency }: PayPalCheckoutProps) {
             <Copy className="icon" />
             Copy unlock code
           </button>
+          <a className="primary-button" href="/#try">
+            <ArrowRight className="icon" />
+            Open tool unlocked
+          </a>
         </div>
       ) : null}
     </div>

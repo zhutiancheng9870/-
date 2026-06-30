@@ -10,7 +10,7 @@ import {
   RefreshCw,
   Upload
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CleanOptions,
   CleanResult,
@@ -21,6 +21,7 @@ import {
 } from "@/lib/csv";
 
 const FREE_ROW_LIMIT = 25;
+const LICENSE_STORAGE_KEY = "creatorcsv_unlock_code";
 
 export function ToolClient() {
   const [rawCsv, setRawCsv] = useState("");
@@ -41,6 +42,14 @@ export function ToolClient() {
   }, [result, unlocked]);
 
   const hasLockedRows = Boolean(result && result.rows.length > FREE_ROW_LIMIT && !unlocked);
+
+  useEffect(() => {
+    const storedCode = window.localStorage.getItem(LICENSE_STORAGE_KEY);
+    if (storedCode) {
+      setLicenseCode(storedCode);
+      void verifyLicense(storedCode);
+    }
+  }, []);
 
   function runClean(input = rawCsv) {
     setError("");
@@ -89,14 +98,15 @@ export function ToolClient() {
     reader.readAsText(file);
   }
 
-  async function verifyLicense() {
+  async function verifyLicense(codeOverride?: string) {
+    const codeToVerify = codeOverride ?? licenseCode;
     setIsVerifying(true);
     setLicenseMessage("");
     try {
       const response = await fetch("/api/license/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: licenseCode })
+        body: JSON.stringify({ code: codeToVerify })
       });
       const data = (await response.json()) as { ok: boolean; message: string };
       setUnlocked(data.ok);
@@ -293,7 +303,7 @@ export function ToolClient() {
                 <button
                   className="secondary-button"
                   disabled={isVerifying}
-                  onClick={verifyLicense}
+                  onClick={() => verifyLicense()}
                   type="button"
                 >
                   <KeyRound className="icon" />
