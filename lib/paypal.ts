@@ -70,13 +70,35 @@ export async function createPayPalOrder(plan: CheckoutPlan, email: string) {
     },
     body: JSON.stringify({
       intent: "CAPTURE",
+      application_context: {
+        shipping_preference: "NO_SHIPPING",
+        user_action: "PAY_NOW"
+      },
       purchase_units: [
         {
           custom_id: email,
           description: planInfo.description,
+          items: [
+            {
+              name: planInfo.label,
+              description: planInfo.description,
+              quantity: "1",
+              category: "DIGITAL_GOODS",
+              unit_amount: {
+                currency_code: getPayPalCurrency(),
+                value: planInfo.amount
+              }
+            }
+          ],
           amount: {
             currency_code: getPayPalCurrency(),
-            value: planInfo.amount
+            value: planInfo.amount,
+            breakdown: {
+              item_total: {
+                currency_code: getPayPalCurrency(),
+                value: planInfo.amount
+              }
+            }
           }
         }
       ]
