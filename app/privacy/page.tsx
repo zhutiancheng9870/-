@@ -1,14 +1,14 @@
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 
-const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "you@example.com";
+const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@example.com";
 
 export default function PrivacyPage() {
   return (
     <main className="policy-page">
       <nav className="nav" aria-label="Privacy navigation">
         <a className="brand" href="/">
-          <span className="brand-mark">C</span>
-          CreatorCSV Cleaner
+          <span className="brand-mark">S</span>
+          StatementReady
         </a>
         <a className="secondary-button" href="/">
           <ArrowLeft className="icon" />
@@ -24,34 +24,27 @@ export default function PrivacyPage() {
           <h1>Privacy Policy</h1>
           <p className="lead">Last updated: June 30, 2026.</p>
 
-          <h2>What We Process</h2>
+          <h2>Files</h2>
           <p>
-            CreatorCSV Cleaner processes uploaded or pasted CSV content in your browser for the
-            purpose of cleaning and exporting your own order data.
+            The demo cleaner processes uploaded or pasted CSV and Excel files in your browser. The
+            current MVP does not intentionally upload statement files to our server.
           </p>
 
-          <h2>CSV Files</h2>
+          <h2>Checkout and Support Data</h2>
           <p>
-            The CSV cleaning tool runs client-side. CSV files are not intentionally uploaded to our
-            server by the cleaning tool. You should still avoid uploading sensitive data that is not
-            needed for cleanup.
+            If you use a hosted checkout link or contact support, the payment provider or email
+            platform may process the details you submit. We only use that data to deliver access,
+            provide support, and maintain basic business records.
           </p>
 
-          <h2>Order Form Data</h2>
+          <h2>Sensitive Data</h2>
           <p>
-            If you submit the checkout form, we collect the name, email, plan, payment reference,
-            and notes you provide so we can verify the purchase, deliver an unlock code, and provide
-            support.
-          </p>
-
-          <h2>Retention</h2>
-          <p>
-            MVP order records may be retained for customer support, fraud prevention, and basic
-            business records. You can request deletion of support data by contacting {supportEmail}.
+            Bank statements can contain sensitive information. Use anonymized samples when testing
+            and review cleaned exports before accounting, tax, or reporting use.
           </p>
 
           <h2>Contact</h2>
-          <p>Questions about privacy can be sent to {supportEmail}.</p>
+          <p>Privacy questions can be sent to {supportEmail}.</p>
         </div>
       </section>
     </main>

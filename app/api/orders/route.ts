@@ -1,45 +1,52 @@
-import { mkdir, appendFile } from "fs/promises";
+import { appendFile, mkdir } from "fs/promises";
 import path from "path";
 import { NextRequest, NextResponse } from "next/server";
+import { createInitialCreditBalance } from "@/lib/billing/credits";
+import { createLicensePayload, signLicense } from "@/lib/billing/license";
+import { getPlan } from "@/lib/billing/plans";
 
 export const runtime = "nodejs";
 
 type OrderPayload = {
-  name?: string;
   email?: string;
-  plan?: string;
-  paymentRef?: string;
-  notes?: string;
+  planId?: string;
+  provider?: "mock" | "lemonsqueezy" | "gumroad" | "stripe" | "paddle";
+  providerOrderId?: string;
 };
+
+export async function GET(request: NextRequest) {
+  const plan = getPlan(request.nextUrl.searchParams.get("plan"));
+  return NextResponse.json({
+    ok: true,
+    mode: "mock_checkout",
+    message:
+      "Mock checkout is active. Add Lemon Squeezy or Gumroad hosted checkout URLs to enable real payment links.",
+    plan
+  });
+}
 
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as OrderPayload | null;
+  const email = String(body?.email || "").trim().toLowerCase();
+  const plan = getPlan(body?.planId);
 
-  if (!body?.name || !body.email || !body.paymentRef) {
-    return NextResponse.json(
-      { ok: false, message: "Name, email, and payment reference are required." },
-      { status: 400 }
-    );
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ ok: false, message: "A valid email is required." }, { status: 400 });
   }
 
-  const emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email);
-  if (!emailLooksValid) {
-    return NextResponse.json(
-      { ok: false, message: "Enter a valid email address." },
-      { status: 400 }
-    );
-  }
-
-  const orderId = `CC-${Date.now().toString(36).toUpperCase()}`;
+  const licensePayload = createLicensePayload(email, plan.id);
+  const licenseKey = signLicense(licensePayload);
+  const credits = createInitialCreditBalance(licensePayload.customerId, plan.id);
   const order = {
-    orderId,
+    orderId: `srdy_${Date.now().toString(36)}`,
+    provider: body?.provider || "mock",
+    providerOrderId: body?.providerOrderId || null,
+    planId: plan.id,
+    email,
+    licenseKey,
+    credits,
     createdAt: new Date().toISOString(),
-    name: String(body.name).slice(0, 120),
-    email: String(body.email).slice(0, 180),
-    plan: String(body.plan || "solo").slice(0, 40),
-    paymentRef: String(body.paymentRef).slice(0, 180),
-    notes: String(body.notes || "").slice(0, 1000),
-    status: "pending_manual_review"
+    status: body?.provider ? "paid_placeholder" : "mock_created"
   };
 
   let stored = true;
@@ -53,10 +60,10 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     ok: true,
-    orderId,
     stored,
-    supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "you@example.com",
-    message:
-      "Order reference created. Email the PayPal receipt with this order ID to receive an unlock code."
+    orderId: order.orderId,
+    planId: plan.id,
+    licenseKey,
+    credits
   });
 }

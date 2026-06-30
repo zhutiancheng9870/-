@@ -1,5 +1,5 @@
 {
-  "name": "creatorcsv-cleaner",
+  "name": "statementready",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,6 +9,7 @@
     "test": "playwright test"
   },
   "dependencies": {
+    "jszip": "^3.10.1",
     "lucide-react": "1.22.0",
     "next": "16.2.9",
     "react": "19.2.7",

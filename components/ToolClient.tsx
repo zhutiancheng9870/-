@@ -5,245 +5,244 @@ import {
   CheckCircle2,
   Download,
   FileSpreadsheet,
-  KeyRound,
-  Lock,
   RefreshCw,
+  TableProperties,
   Upload
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
-  CleanOptions,
-  CleanResult,
-  cleanCsvRows,
-  parseCsv,
-  sampleCsv,
-  stringifyCsv
+  downloadCsv,
+  downloadExcel,
+  exportStandardCsv,
+  parseCsvText,
+  parseSpreadsheetFile,
+  prepareTable,
+  type ColumnMapping,
+  type ParsedTable,
+  type PrepareResult,
+  type TemplateDefinition
 } from "@/lib/csv";
+import { templates } from "@/lib/templates";
 
-const FREE_ROW_LIMIT = 25;
-const LICENSE_STORAGE_KEY = "creatorcsv_unlock_code";
+const samples: Record<string, string> = {
+  "bank-statement": `Posted Date,Account,Details,Merchant,Debit,Credit,Running Balance,Currency,Transaction ID,Category
+2026/06/01,Chase Checking,Adobe Creative Cloud,Adobe,59.99,,10420.31,USD,TXN-1001,Software
+06-02-2026,Chase Checking,Client retainer payment,Acme Studio,,2500,12920.31,USD,TXN-1002,Income
+2026.06.02,Chase Checking,Client retainer payment,Acme Studio,,2500,12920.31,USD,TXN-1002,Income
+2026/06/04,Chase Checking,Office rent,Main Street Offices,"1,800",,11120.31,USD,TXN-1003,Rent
+bad-date,Chase Checking,Unknown card charge,,1200000,,0,USD,TXN-1004,Review`,
+  "quickbooks-bank-csv": `Date,Description,Amount,Reference,Category
+2026/06/01,Adobe Creative Cloud,-59.99,TXN-1001,Software
+06-02-2026,Client retainer payment,2500,TXN-1002,Income
+2026.06.02,Client retainer payment,2500,TXN-1002,Income
+2026/06/04,Office rent,"-1,800",TXN-1003,Rent
+bad-date,Unknown card charge,-1200000,TXN-1004,Review`,
+  "xero-bank-csv": `Transaction Date,Net Amount,Payee,Narrative,Reference,Currency
+2026/06/01,-59.99,Adobe,Adobe Creative Cloud,TXN-1001,USD
+06-02-2026,2500,Acme Studio,Client retainer payment,TXN-1002,USD
+2026.06.02,2500,Acme Studio,Client retainer payment,TXN-1002,USD
+2026/06/04,"-1,800",Main Street Offices,Office rent,TXN-1003,USD
+bad-date,-1200000,,Unknown card charge,TXN-1004,USD`
+};
 
 export function ToolClient() {
-  const [rawCsv, setRawCsv] = useState("");
-  const [fileName, setFileName] = useState("");
-  const [preset, setPreset] = useState<CleanOptions["preset"]>("gumroad");
-  const [dedupe, setDedupe] = useState(true);
-  const [keepCancelled, setKeepCancelled] = useState(false);
-  const [result, setResult] = useState<CleanResult | null>(null);
+  const firstTemplate = templates[0];
+  const [templateId, setTemplateId] = useState(firstTemplate.id);
+  const [rawText, setRawText] = useState(samples[firstTemplate.id]);
+  const [fileName, setFileName] = useState("sample-bank-statement.csv");
+  const [parsed, setParsed] = useState<ParsedTable | null>(() =>
+    parseCsvText(samples[firstTemplate.id], "sample-bank-statement.csv")
+  );
+  const [result, setResult] = useState<PrepareResult | null>(() =>
+    prepareTable(parseCsvText(samples[firstTemplate.id], "sample-bank-statement.csv"), firstTemplate)
+  );
   const [error, setError] = useState("");
-  const [licenseCode, setLicenseCode] = useState("");
-  const [licenseMessage, setLicenseMessage] = useState("");
-  const [unlocked, setUnlocked] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
 
-  const previewRows = useMemo(() => {
-    if (!result) return [];
-    return unlocked ? result.rows : result.rows.slice(0, FREE_ROW_LIMIT);
-  }, [result, unlocked]);
+  const selectedTemplate = useMemo(
+    () => templates.find((template) => template.id === templateId) ?? firstTemplate,
+    [templateId, firstTemplate]
+  );
 
-  const hasLockedRows = Boolean(result && result.rows.length > FREE_ROW_LIMIT && !unlocked);
+  const duplicateRows = result?.duplicateIssues.length ?? 0;
+  const errorCount = result?.anomalyIssues.filter((issue) => issue.severity === "error").length ?? 0;
+  const warningCount =
+    result?.anomalyIssues.filter((issue) => issue.severity === "warning").length ?? 0;
 
-  useEffect(() => {
-    const storedCode = window.localStorage.getItem(LICENSE_STORAGE_KEY);
-    if (storedCode) {
-      setLicenseCode(storedCode);
-      void verifyLicense(storedCode);
+  function processParsed(nextParsed: ParsedTable, template = selectedTemplate, mapping?: ColumnMapping) {
+    if (nextParsed.headers.length === 0) {
+      setResult(null);
+      setError("Upload or paste a file with a header row first.");
+      return;
     }
-  }, []);
-
-  function runClean(input = rawCsv) {
     setError("");
-    setLicenseMessage("");
+    setParsed(nextParsed);
+    setResult(prepareTable(nextParsed, template, mapping));
+  }
+
+  function runPastedText(input = rawText) {
     try {
-      const parsed = parseCsv(input);
-      if (parsed.length === 0) {
-        setResult(null);
-        setError("Add a CSV file or paste CSV text before cleaning.");
-        return;
-      }
-      setResult(cleanCsvRows(parsed, { preset, dedupe, keepCancelled }));
+      processParsed(parseCsvText(input, fileName || "pasted-bank-statement.csv"));
+    } catch (nextError) {
+      setResult(null);
+      setError(nextError instanceof Error ? nextError.message : "The table could not be parsed.");
+    }
+  }
+
+  async function handleFile(file: File | undefined) {
+    if (!file) return;
+    try {
+      setFileName(file.name);
+      const nextParsed = await parseSpreadsheetFile(file);
+      setRawText(file.name.toLowerCase().endsWith(".xlsx") ? "" : await file.text());
+      processParsed(nextParsed);
     } catch (nextError) {
       setResult(null);
       setError(
         nextError instanceof Error
           ? nextError.message
-          : "The CSV could not be parsed. Check the file and try again."
+          : "The file could not be read. Upload a CSV, TSV, or XLSX file."
       );
     }
   }
 
   function loadSample() {
-    const sample = sampleCsv();
-    setRawCsv(sample);
-    setFileName("sample-gumroad-orders.csv");
-    runClean(sample);
+    const nextSample = samples[templateId];
+    const nextParsed = parseCsvText(nextSample, `sample-${templateId}.csv`);
+    setRawText(nextSample);
+    setFileName(`sample-${templateId}.csv`);
+    processParsed(nextParsed);
   }
 
-  function handleFile(file: File | undefined) {
-    if (!file) return;
-    if (!file.name.toLowerCase().endsWith(".csv")) {
-      setError("Please upload a .csv file.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const text = String(reader.result || "");
-      setRawCsv(text);
-      setFileName(file.name);
-      runClean(text);
-    };
-    reader.onerror = () => {
-      setError("The file could not be read. Try exporting the CSV again.");
-    };
-    reader.readAsText(file);
+  function changeTemplate(nextTemplateId: string) {
+    const nextTemplate = templates.find((template) => template.id === nextTemplateId) ?? firstTemplate;
+    const nextSample = samples[nextTemplate.id] ?? samples[firstTemplate.id];
+    const nextParsed = parseCsvText(nextSample, `sample-${nextTemplate.id}.csv`);
+    setTemplateId(nextTemplate.id);
+    setRawText(nextSample);
+    setFileName(`sample-${nextTemplate.id}.csv`);
+    setParsed(nextParsed);
+    setResult(prepareTable(nextParsed, nextTemplate));
+    setError("");
   }
 
-  async function verifyLicense(codeOverride?: string) {
-    const codeToVerify = codeOverride ?? licenseCode;
-    setIsVerifying(true);
-    setLicenseMessage("");
-    try {
-      const response = await fetch("/api/license/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: codeToVerify })
-      });
-      const data = (await response.json()) as { ok: boolean; message: string };
-      setUnlocked(data.ok);
-      setLicenseMessage(data.message);
-    } catch {
-      setUnlocked(false);
-      setLicenseMessage("License verification is unavailable. Try again in a minute.");
-    } finally {
-      setIsVerifying(false);
-    }
+  function updateMapping(field: string, source: string) {
+    if (!parsed || !result) return;
+    const nextMapping = { ...result.mapping, [field]: source || null };
+    setResult(prepareTable(parsed, selectedTemplate, nextMapping));
   }
 
-  function exportCsv(full: boolean) {
+  function exportCsv() {
     if (!result) {
-      setError("Clean a CSV before exporting.");
+      setError("Clean a file before exporting CSV.");
       return;
     }
-    if (full && hasLockedRows) {
-      setLicenseMessage("Enter an unlock code to export the full cleaned CSV.");
-      return;
-    }
+    downloadCsv(
+      exportStandardCsv(result.normalizedRows, selectedTemplate),
+      `${selectedTemplate.id}-cleaned.csv`
+    );
+  }
 
-    const rows = full || unlocked ? result.rows : result.rows.slice(0, FREE_ROW_LIMIT);
-    const csv = stringifyCsv(rows, result.headers);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = full || unlocked ? "cleaned-orders-full.csv" : "cleaned-orders-preview.csv";
-    link.click();
-    URL.revokeObjectURL(url);
+  async function exportExcel() {
+    if (!result) {
+      setError("Clean a file before exporting Excel.");
+      return;
+    }
+    setIsExportingExcel(true);
+    try {
+      await downloadExcel(result.normalizedRows, selectedTemplate, `${selectedTemplate.id}-cleaned.xlsx`);
+    } finally {
+      setIsExportingExcel(false);
+    }
   }
 
   return (
-    <div className="panel tool-panel" id="try">
+    <div className="panel tool-panel" id="demo">
       <div className="panel-header">
         <div>
-          <p className="panel-title">Clean an order CSV</p>
+          <p className="panel-title">Live cleaner demo</p>
           <p className="small-copy" style={{ margin: 0 }}>
-            Free preview: first {FREE_ROW_LIMIT} cleaned rows.
+            Upload CSV/XLSX, map columns, validate rows, and export a bookkeeping-ready file.
           </p>
         </div>
-        <span className={unlocked ? "badge badge-teal" : "badge badge-coral"}>
-          {unlocked ? <CheckCircle2 className="icon" /> : <Lock className="icon" />}
-          {unlocked ? "Full export on" : "Full export locked"}
+        <span className="badge badge-teal">
+          <TableProperties className="icon" />
+          CSV + Excel
         </span>
       </div>
 
       <div className="tool-body">
+        <div className="controls-grid">
+          <div className="field">
+            <label htmlFor="template">Output template</label>
+            <select
+              id="template"
+              value={templateId}
+              onChange={(event) => changeTemplate(event.target.value)}
+            >
+              {templates.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="file">Upload file</label>
+            <input
+              id="file"
+              aria-label="Upload CSV or Excel file"
+              type="file"
+              accept=".csv,.tsv,.xlsx,text/csv"
+              onChange={(event) => void handleFile(event.target.files?.[0])}
+            />
+          </div>
+          <div className="field">
+            <label>Current file</label>
+            <div className="readonly-field">{fileName || "No file loaded"}</div>
+          </div>
+        </div>
+
         <div className="upload-zone">
           <Upload aria-hidden="true" />
           <div>
-            <strong>{fileName || "Drop in a creator platform CSV"}</strong>
+            <strong>Paste messy bank data or load a sample</strong>
             <p className="small-copy" style={{ marginBottom: 0 }}>
-              Gumroad, Lemon Squeezy, Ko-fi, Etsy, Stripe, or any generic sales export.
+              Handles mixed dates, currency symbols, thousands separators, missing values, duplicate
+              rows, and unusually large transactions.
             </p>
           </div>
-          <input
-            aria-label="Upload CSV file"
-            type="file"
-            accept=".csv,text/csv"
-            onChange={(event) => handleFile(event.target.files?.[0])}
-          />
         </div>
 
         <textarea
           aria-label="Paste CSV text"
           className="textarea"
-          placeholder="Or paste CSV text here..."
-          value={rawCsv}
-          onChange={(event) => setRawCsv(event.target.value)}
+          placeholder="Paste CSV / TSV bank statement content here..."
+          value={rawText}
+          onChange={(event) => setRawText(event.target.value)}
         />
 
-        <div className="controls-grid">
-          <div className="field">
-            <label htmlFor="preset">Platform preset</label>
-            <select
-              id="preset"
-              value={preset}
-              onChange={(event) => setPreset(event.target.value as CleanOptions["preset"])}
-            >
-              <option value="gumroad">Gumroad</option>
-              <option value="lemon">Lemon Squeezy</option>
-              <option value="kofi">Ko-fi</option>
-              <option value="etsy">Etsy</option>
-              <option value="stripe">Stripe</option>
-              <option value="generic">Generic CSV</option>
-            </select>
-          </div>
-          <label className="field">
-            <span>Deduplicate rows</span>
-            <select
-              value={dedupe ? "yes" : "no"}
-              onChange={(event) => setDedupe(event.target.value === "yes")}
-            >
-              <option value="yes">On</option>
-              <option value="no">Off</option>
-            </select>
-          </label>
-          <label className="field">
-            <span>Refunded orders</span>
-            <select
-              value={keepCancelled ? "keep" : "remove"}
-              onChange={(event) => setKeepCancelled(event.target.value === "keep")}
-            >
-              <option value="remove">Remove from export</option>
-              <option value="keep">Keep in export</option>
-            </select>
-          </label>
-        </div>
-
         <div className="button-row">
-          <button className="primary-button" onClick={() => runClean()} type="button">
+          <button className="primary-button" onClick={() => runPastedText()} type="button">
             <RefreshCw className="icon" />
-            Clean pasted CSV
+            Clean pasted data
           </button>
           <button className="secondary-button" onClick={loadSample} type="button">
             <FileSpreadsheet className="icon" />
-            Load sample data
+            Load sample
           </button>
-          <button
-            className="secondary-button"
-            disabled={!result}
-            onClick={() => exportCsv(false)}
-            type="button"
-          >
+          <button className="secondary-button" disabled={!result} onClick={exportCsv} type="button">
             <Download className="icon" />
-            Export free preview
+            Export cleaned CSV
           </button>
           <button
             className="primary-button"
-            disabled={!result || hasLockedRows}
-            onClick={() => exportCsv(true)}
+            disabled={!result || isExportingExcel}
+            onClick={() => void exportExcel()}
             type="button"
           >
             <Download className="icon" />
-            Export full CSV
+            {isExportingExcel ? "Generating..." : "Export cleaned Excel"}
           </button>
         </div>
 
@@ -258,79 +257,92 @@ export function ToolClient() {
           <>
             <div className="summary-grid" aria-label="Cleaning summary">
               <div className="metric">
-                <strong>{result.summary.imported}</strong>
-                <span>Rows imported</span>
+                <strong>{result.parsed.records.length}</strong>
+                <span>Raw rows</span>
               </div>
               <div className="metric">
-                <strong>{result.summary.exported}</strong>
-                <span>Rows ready</span>
+                <strong>{result.normalizedRows.length}</strong>
+                <span>Cleaned rows</span>
               </div>
               <div className="metric">
-                <strong>{result.summary.duplicatesRemoved}</strong>
-                <span>Duplicates removed</span>
+                <strong>{result.emptyRowsRemoved}</strong>
+                <span>Empty rows removed</span>
               </div>
               <div className="metric">
-                <strong>{result.summary.cancelledRemoved}</strong>
-                <span>Refunded/failed removed</span>
+                <strong>{duplicateRows}</strong>
+                <span>Possible duplicates</span>
               </div>
             </div>
 
-            {hasLockedRows ? (
-              <div className="alert alert-error" role="status">
-                <Lock className="icon" />
-                <span>
-                  Free mode shows and exports {FREE_ROW_LIMIT} rows. Unlock to export all{" "}
-                  {result.rows.length} cleaned rows and reuse the workflow.
-                </span>
-              </div>
-            ) : (
-              <div className="alert alert-success" role="status">
-                <CheckCircle2 className="icon" />
-                <span>The cleaned CSV is ready to export.</span>
-              </div>
-            )}
-
-            <div className="field">
-              <label htmlFor="license">Unlock code</label>
-              <div className="button-row">
-                <input
-                  id="license"
-                  aria-label="Unlock code"
-                  placeholder="Enter code after purchase"
-                  value={licenseCode}
-                  onChange={(event) => setLicenseCode(event.target.value)}
-                />
-                <button
-                  className="secondary-button"
-                  disabled={isVerifying}
-                  onClick={() => verifyLicense()}
-                  type="button"
-                >
-                  <KeyRound className="icon" />
-                  {isVerifying ? "Checking..." : "Verify"}
-                </button>
-                <a className="primary-button" href="/checkout">
-                  <Lock className="icon" />
-                  Buy unlock key
-                </a>
-              </div>
-              {licenseMessage ? <p className="small-copy">{licenseMessage}</p> : null}
+            <div className="alert alert-success" role="status">
+              <CheckCircle2 className="icon" />
+              <span>
+                {selectedTemplate.name} generated with {errorCount} required-field errors and{" "}
+                {warningCount} warnings.
+              </span>
             </div>
 
-            <div className="table-wrap" aria-label="Cleaned CSV preview">
+            <section className="mapping-panel" aria-label="Column mapping">
+              <div>
+                <h3>Column mapping</h3>
+                <p className="small-copy">
+                  StatementReady matched headers automatically. Override any field before export.
+                </p>
+              </div>
+              <div className="mapping-grid">
+                {selectedTemplate.columns.map((column) => (
+                  <label className="field" key={column.key}>
+                    <span>
+                      {column.label}
+                      {column.required ? " *" : ""}
+                    </span>
+                    <select
+                      aria-label={`${column.label} source column`}
+                      value={result.mapping[column.key] ?? ""}
+                      onChange={(event) => updateMapping(column.key, event.target.value)}
+                    >
+                      <option value="">Do not map</option>
+                      {result.parsed.headers.map((header) => (
+                        <option key={header} value={header}>
+                          {header}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ))}
+              </div>
+            </section>
+
+            {result.anomalyIssues.length > 0 ? (
+              <section className="issue-list" aria-label="Validation errors">
+                <h3>Validation errors</h3>
+                {result.anomalyIssues.slice(0, 8).map((issue, index) => (
+                  <div className="issue-row" key={`${issue.rowIndex}-${issue.field}-${index}`}>
+                    <span className={issue.severity === "error" ? "badge badge-coral" : "badge badge-amber"}>
+                      Row {issue.rowIndex + 1}
+                    </span>
+                    <span>
+                      {issue.field}: {issue.message}
+                    </span>
+                  </div>
+                ))}
+              </section>
+            ) : null}
+
+            <div className="table-wrap" aria-label="Cleaned table preview">
               <table>
                 <thead>
                   <tr>
-                    {result.headers.slice(0, 7).map((header) => (
-                      <th key={header}>{header}</th>
+                    {selectedTemplate.columns.slice(0, 8).map((column) => (
+                      <th key={column.key}>{column.label}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {previewRows.slice(0, 10).map((row, index) => (
-                    <tr key={`${row.order_id}-${index}`}>
-                      {result.headers.slice(0, 7).map((header) => (
-                        <td key={header}>{row[header]}</td>
+                  {result.normalizedRows.slice(0, 8).map((row, index) => (
+                    <tr key={`${index}-${selectedTemplate.id}`}>
+                      {selectedTemplate.columns.slice(0, 8).map((column) => (
+                        <td key={column.key}>{row[column.key]}</td>
                       ))}
                     </tr>
                   ))}

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CreatorCSV Cleaner",
+  title: "StatementReady",
   description:
-    "Clean messy Gumroad, Lemon Squeezy, Ko-fi, Etsy, and Stripe order CSV files in the browser."
+    "Clean messy bank, PayPal, Stripe, and card CSV or Excel exports into bookkeeping-ready files."
 };
 
 export default function RootLayout({

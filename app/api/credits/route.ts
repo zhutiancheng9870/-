@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createInitialCreditBalance } from "@/lib/billing/credits";
 import { verifyLicense } from "@/lib/billing/license";
 
 export const runtime = "nodejs";
@@ -9,14 +10,13 @@ export async function POST(request: NextRequest) {
 
   if (!license) {
     return NextResponse.json(
-      { ok: false, message: "License key was not recognized." },
+      { ok: false, message: "A valid license key is required." },
       { status: 400 }
     );
   }
 
   return NextResponse.json({
     ok: true,
-    message: "License accepted.",
-    license
+    balance: createInitialCreditBalance(license.customerId, license.planId)
   });
 }

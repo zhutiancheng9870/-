@@ -1,14 +1,14 @@
 import { ArrowLeft, FileText } from "lucide-react";
 
-const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "you@example.com";
+const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@example.com";
 
 export default function TermsPage() {
   return (
     <main className="policy-page">
       <nav className="nav" aria-label="Terms navigation">
         <a className="brand" href="/">
-          <span className="brand-mark">C</span>
-          CreatorCSV Cleaner
+          <span className="brand-mark">S</span>
+          StatementReady
         </a>
         <a className="secondary-button" href="/">
           <ArrowLeft className="icon" />
@@ -26,32 +26,30 @@ export default function TermsPage() {
 
           <h2>Product</h2>
           <p>
-            CreatorCSV Cleaner is a CSV cleanup utility for creator and small-business order
-            exports. It normalizes fields, removes duplicate rows, filters refunded or failed rows
-            when selected, and exports a cleaned CSV.
+            StatementReady is a CSV and Excel cleanup utility for bank, card, PayPal, Stripe, and
+            similar transaction exports.
           </p>
 
           <h2>No Professional Advice</h2>
           <p>
-            The product is not accounting, tax, legal, financial, or business advice. Always review
-            cleaned exports before using them for reporting, accounting, taxes, or customer
-            communication.
+            StatementReady is not accounting, tax, legal, financial, or bookkeeping advice. Always
+            review cleaned files before importing, reconciling, reporting, or sharing them.
           </p>
 
           <h2>User Responsibility</h2>
           <p>
-            You are responsible for having the right to process the CSV data you upload or paste and
-            for verifying the final output before using it.
+            You are responsible for having permission to process uploaded data and for verifying
+            final outputs before using them.
           </p>
 
-          <h2>License</h2>
+          <h2>Payments</h2>
           <p>
-            A paid unlock code enables full export access for the MVP workflow. Do not share unlock
-            codes publicly or use the product to process data you are not authorized to handle.
+            The MVP is designed for hosted Lemon Squeezy or Gumroad checkout links. Stripe and
+            Paddle may be added later. Do not enter real credentials into the source code.
           </p>
 
           <h2>Contact</h2>
-          <p>Support and terms questions can be sent to {supportEmail}.</p>
+          <p>Terms questions can be sent to {supportEmail}.</p>
         </div>
       </section>
     </main>
