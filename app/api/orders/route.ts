@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 type OrderPayload = {
   email?: string;
   planId?: string;
-  provider?: "mock" | "lemonsqueezy" | "gumroad" | "stripe" | "paddle";
+  provider?: "mock" | "paypal" | "lemonsqueezy" | "gumroad" | "stripe" | "paddle";
   providerOrderId?: string;
 };
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     ok: true,
     mode: "mock_checkout",
     message:
-      "Mock checkout is active. Add Lemon Squeezy or Gumroad hosted checkout URLs to enable real payment links.",
+      "Mock checkout is active. Add PayPal environment variables to enable real PayPal Checkout.",
     plan
   });
 }

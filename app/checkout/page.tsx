@@ -1,9 +1,20 @@
 import { ArrowLeft, ExternalLink, Receipt, ShieldCheck } from "lucide-react";
+import { PayPalCheckout } from "@/components/PayPalCheckout";
 import { getPlan } from "@/lib/billing/plans";
+import {
+  getPayPalCurrency,
+  getPayPalPlan,
+  isPayPalConfigured,
+  isPayPalPlanId,
+  type PayPalPlanId
+} from "@/lib/paypal";
 
 const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@example.com";
 const lemonCheckoutUrl = process.env.NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_URL || "";
 const gumroadCheckoutUrl = process.env.NEXT_PUBLIC_GUMROAD_CHECKOUT_URL || "";
+const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "";
+const paypalConfigured = isPayPalConfigured();
+const isSandbox = process.env.PAYPAL_ENV !== "live";
 
 type CheckoutPageProps = {
   searchParams?: Promise<{ plan?: string }>;
@@ -11,9 +22,10 @@ type CheckoutPageProps = {
 
 export default async function CheckoutPage({ searchParams }: CheckoutPageProps) {
   const params = await searchParams;
-  const plan = getPlan(params?.plan);
-  const hostedUrl =
-    plan.checkoutEnvKey === "NEXT_PUBLIC_GUMROAD_CHECKOUT_URL"
+  const requestedPlan = isPayPalPlanId(params?.plan) ? params.plan : "starter";
+  const plan = getPayPalPlan(requestedPlan);
+  const hostedFallbackUrl =
+    getPlan(params?.plan).checkoutEnvKey === "NEXT_PUBLIC_GUMROAD_CHECKOUT_URL"
       ? gumroadCheckoutUrl
       : lemonCheckoutUrl || gumroadCheckoutUrl;
 
@@ -40,12 +52,12 @@ export default async function CheckoutPage({ searchParams }: CheckoutPageProps) 
           <div>
             <span className="eyebrow">
               <Receipt className="icon" />
-              USD checkout placeholder
+              PayPal primary checkout
             </span>
-            <h1>{plan.name} checkout is ready to wire up.</h1>
+            <h1>Start StatementReady with PayPal.</h1>
             <p className="lead">
-              Use a hosted Lemon Squeezy or Gumroad checkout link for the first paid test. Stripe
-              and Paddle can be added later behind the same order, license, and credits structure.
+              Pay with PayPal Checkout and receive a signed StatementReady license key after
+              capture. Lemon Squeezy and Gumroad remain available as hosted-checkout backups.
             </p>
             <div className="feature-grid" style={{ gridTemplateColumns: "1fr" }}>
               <div className="feature">
@@ -59,10 +71,10 @@ export default async function CheckoutPage({ searchParams }: CheckoutPageProps) 
               </div>
               <div className="feature">
                 <ShieldCheck className="icon" />
-                <h3>Webhook-ready structure</h3>
+                <h3>Payment structure</h3>
                 <p className="small-copy">
-                  The app includes mock orders, signed license payloads, monthly credits, and
-                  Lemon Squeezy/Gumroad webhook endpoints. Real account keys belong in environment
+                  PayPal Orders API handles create/capture. Successful captures create a signed
+                  license key and monthly credit balance. Real secrets stay in environment
                   variables.
                 </p>
               </div>
@@ -70,32 +82,46 @@ export default async function CheckoutPage({ searchParams }: CheckoutPageProps) 
           </div>
 
           <div className="checkout-card">
-            <h2>Hosted checkout option</h2>
+            <h2>Pay with PayPal</h2>
             <p className="small-copy">
-              Add `NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_URL` or `NEXT_PUBLIC_GUMROAD_CHECKOUT_URL` in
-              production. Until then, use the mock checkout to test the order flow.
+              Choose a plan and complete PayPal Checkout. If live credentials are not configured,
+              this page shows a safe mock fallback.
             </p>
-            <div className="button-row">
-              {hostedUrl ? (
-                <a className="primary-button" href={hostedUrl}>
-                  <ExternalLink className="icon" />
-                  Open hosted checkout
-                </a>
-              ) : (
-                <a className="primary-button" href={`/api/orders?plan=${plan.id}`}>
-                  Mock checkout endpoint
-                </a>
-              )}
-              <a className="secondary-button" href={`mailto:${supportEmail}`}>
-                Contact support
-              </a>
-            </div>
-            <div className="alert alert-success">
-              <span>
-                No real charge is attempted on this placeholder page. Hosted checkout links can be
-                swapped in without changing the demo cleaner.
-              </span>
-            </div>
+            {paypalConfigured ? (
+              <PayPalCheckout
+                clientId={paypalClientId}
+                currency={getPayPalCurrency()}
+                initialPlanId={requestedPlan as PayPalPlanId}
+                isSandbox={isSandbox}
+              />
+            ) : (
+              <>
+                <div className="alert alert-error" role="status">
+                  <span>
+                    PayPal Checkout is not configured yet. Add live or sandbox PayPal environment
+                    variables in Vercel to enable real payment buttons.
+                  </span>
+                </div>
+                <div className="button-row">
+                  <a className="primary-button" href={`/api/orders?plan=${plan.id}`}>
+                    Mock checkout endpoint
+                  </a>
+                  {hostedFallbackUrl ? (
+                    <a className="secondary-button" href={hostedFallbackUrl}>
+                      <ExternalLink className="icon" />
+                      Hosted checkout backup
+                    </a>
+                  ) : null}
+                </div>
+              </>
+            )}
+            <p className="small-copy">
+              Required env vars: `NEXT_PUBLIC_PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`,
+              `PAYPAL_ENV`, `NEXT_PUBLIC_PAYPAL_CURRENCY`, and `LICENSE_SIGNING_SECRET`.
+            </p>
+            <a className="secondary-button" href={`mailto:${supportEmail}`}>
+              Contact support
+            </a>
           </div>
         </div>
       </section>

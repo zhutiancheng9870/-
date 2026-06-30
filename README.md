@@ -18,7 +18,8 @@ Live MVP: https://creatorcsv-cleaner.vercel.app/
 - Cleaned CSV export.
 - Cleaned Excel export.
 - USD pricing page.
-- Lemon Squeezy / Gumroad hosted checkout placeholder.
+- PayPal Checkout primary payment flow.
+- Lemon Squeezy / Gumroad hosted checkout fallback placeholders.
 - Mock order, license, credits, and webhook structure.
 - Overseas launch copy in `docs/launch-copy.md`.
 
@@ -76,15 +77,17 @@ Never commit real payment credentials or webhook secrets.
 - `lib/csv/export-csv.ts` exports cleaned CSV.
 - `lib/csv/export-excel.ts` exports cleaned XLSX.
 - `lib/templates/*` defines bank statement, QuickBooks-ready, and Xero-ready templates.
+- `lib/paypal.ts` creates and captures PayPal Orders API payments.
 - `lib/billing/*` defines plans, license payloads, credits, and webhook helpers.
 
 ## Payment Architecture
 
-The first paid test should use a hosted checkout link:
+The first paid test should use PayPal Checkout as the primary payment flow:
 
-- Lemon Squeezy hosted checkout for Starter.
-- Gumroad hosted checkout for Pro or backup sales.
+- PayPal Orders API creates and captures one-time paid access for Starter, Pro, and Team/API.
+- Successful captures return a signed StatementReady license key and credit balance.
+- Lemon Squeezy and Gumroad hosted checkout links remain available as fallback options.
 - Stripe/Paddle can be added later behind the same order/license/credits interfaces.
 
-The current checkout page is a safe placeholder and does not charge real money unless hosted checkout
-URLs are configured.
+The checkout page is safe in development. It only shows real PayPal buttons when PayPal environment
+variables are configured.

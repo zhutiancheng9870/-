@@ -56,11 +56,21 @@ test("pricing page includes USD checkout plans", async ({ page }) => {
   await expect(page.getByText("$99/month")).toBeVisible();
 });
 
-test("checkout page exposes hosted checkout placeholder", async ({ page }) => {
+test("checkout page exposes PayPal primary checkout and safe fallback", async ({ page }) => {
   await page.goto("/checkout?plan=starter");
-  await expect(page.getByRole("heading", { name: /Starter checkout is ready to wire up/i })).toBeVisible();
-  await expect(page.getByText(/Lemon Squeezy or Gumroad/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Start StatementReady with PayPal/i })).toBeVisible();
+  await expect(page.getByText(/PayPal Checkout is not configured yet/i)).toBeVisible();
+  await expect(page.getByText(/NEXT_PUBLIC_PAYPAL_CLIENT_ID/i)).toBeVisible();
   await expect(page.getByRole("link", { name: /Mock checkout endpoint/i })).toBeVisible();
+});
+
+test("mock order endpoint remains available when PayPal is not configured", async ({ request }) => {
+  const response = await request.get("/api/orders?plan=starter");
+  expect(response.ok()).toBeTruthy();
+  const payload = (await response.json()) as { ok: boolean; mode: string; message: string };
+  expect(payload.ok).toBeTruthy();
+  expect(payload.mode).toBe("mock_checkout");
+  expect(payload.message).toContain("PayPal");
 });
 
 test("mobile layout has no horizontal overflow", async ({ page }) => {

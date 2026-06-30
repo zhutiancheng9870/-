@@ -21,7 +21,8 @@ freelancers and bookkeepers. The output is a reviewed, bookkeeping-ready CSV or 
 - Cleaned CSV export.
 - Cleaned Excel export.
 - USD pricing page.
-- Hosted checkout placeholder for Lemon Squeezy and Gumroad.
+- PayPal Checkout as primary payment flow.
+- Hosted checkout fallback placeholders for Lemon Squeezy and Gumroad.
 - Mock order, license, credits, and webhook structure.
 - Overseas launch copy.
 
@@ -50,7 +51,10 @@ freelancers and bookkeepers. The output is a reviewed, bookkeeping-ready CSV or 
 - `lib/billing/license.ts`: signed license payload generation and verification.
 - `lib/billing/credits.ts`: monthly cleanup credit balance structure.
 - `lib/billing/webhooks.ts`: Lemon Squeezy signature and Gumroad token helpers.
+- `lib/paypal.ts`: PayPal Orders API create/capture helpers.
 - `app/api/orders/route.ts`: mock order creation.
+- `app/api/paypal/create-order/route.ts`: PayPal order creation endpoint.
+- `app/api/paypal/capture-order/route.ts`: PayPal capture and license endpoint.
 - `app/api/webhooks/lemonsqueezy/route.ts`: Lemon Squeezy webhook placeholder.
 - `app/api/webhooks/gumroad/route.ts`: Gumroad webhook placeholder.
 

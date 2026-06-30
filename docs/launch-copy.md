@@ -12,8 +12,8 @@ Stripe, and card exports before reconciliation.
 Upload a CSV or Excel file, map columns, catch validation issues, detect duplicate rows, and export
 a cleaned CSV/XLSX for review before QuickBooks, Xero, or spreadsheet workflows.
 
-This is an MVP with hosted checkout placeholders. I am looking for real-world messy bank exports and
-feedback from bookkeepers, freelancers, and small firm operators.
+This is an MVP with PayPal checkout and hosted-checkout fallbacks. I am looking for real-world
+messy bank exports and feedback from bookkeepers, freelancers, and small firm operators.
 
 Try it here: https://creatorcsv-cleaner.vercel.app/
 
