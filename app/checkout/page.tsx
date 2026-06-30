@@ -3,9 +3,10 @@ import { CheckoutForm } from "@/components/CheckoutForm";
 
 const paymentLink = process.env.NEXT_PUBLIC_PAYMENT_LINK || "";
 const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "you@example.com";
+const paypalEmail = process.env.NEXT_PUBLIC_PAYPAL_EMAIL || "";
 const paymentInstructions =
   process.env.NEXT_PUBLIC_PAYMENT_INSTRUCTIONS ||
-  "Use your configured Gumroad, Lemon Squeezy, Ko-fi, Stripe payment link, or pay manually and paste the receipt reference below.";
+  "Pay with PayPal Goods and Services, then submit the receipt reference below.";
 
 export default function CheckoutPage() {
   return (
@@ -48,6 +49,13 @@ export default function CheckoutPage() {
                     <ExternalLink className="icon" />
                     Open payment page
                   </a>
+                ) : paypalEmail ? (
+                  <div className="alert alert-success">
+                    <span>
+                      Send <strong>$9 USD</strong> to PayPal: <strong>{paypalEmail}</strong>. Use
+                      Goods and Services, then paste the transaction ID in the order form.
+                    </span>
+                  </div>
                 ) : (
                   <p className="alert alert-success">
                     Secure checkout is being prepared. For early access or purchase questions,
@@ -69,8 +77,8 @@ export default function CheckoutPage() {
           <div className="checkout-card">
             <h2>Submit order</h2>
             <p className="small-copy">
-              This form writes a local order record in development. On deployment, use Railway or
-              Render with persistent storage, or replace this with a Gumroad/Lemon webhook.
+              Submit your email and payment reference so an unlock code can be delivered manually
+              during the MVP test.
             </p>
             <CheckoutForm />
           </div>
