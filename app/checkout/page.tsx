@@ -49,8 +49,9 @@ export default function CheckoutPage() {
                     Open payment page
                   </a>
                 ) : (
-                  <p className="alert alert-error">
-                    Add NEXT_PUBLIC_PAYMENT_LINK or a manual payment instruction before launch.
+                  <p className="alert alert-success">
+                    Secure checkout is being prepared. For early access or purchase questions,
+                    contact {supportEmail}.
                   </p>
                 )}
               </div>
