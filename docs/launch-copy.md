@@ -1,5 +1,7 @@
 # StatementReady Launch Copy
 
+Live URL: https://creatorcsv-cleaner.vercel.app/
+
 ## Product Hunt / Indie Hackers
 
 **Title:** StatementReady: clean messy bank CSVs before bookkeeping
@@ -13,6 +15,8 @@ a cleaned CSV/XLSX for review before QuickBooks, Xero, or spreadsheet workflows.
 This is an MVP with hosted checkout placeholders. I am looking for real-world messy bank exports and
 feedback from bookkeepers, freelancers, and small firm operators.
 
+Try it here: https://creatorcsv-cleaner.vercel.app/
+
 ## Reddit Post
 
 **Title:** I made a small tool to clean messy bank CSV exports before bookkeeping
@@ -25,6 +29,8 @@ detects duplicates, and exports a cleaned CSV or Excel file.
 
 I am looking for feedback from freelancers and bookkeepers. No financial advice, no tax promises,
 just file cleanup before review/import.
+
+Live demo: https://creatorcsv-cleaner.vercel.app/
 
 ## Cold Outreach Template
 
