@@ -42,13 +42,21 @@ export async function POST(request: NextRequest) {
     status: "pending_manual_review"
   };
 
-  const dataDir = path.join(process.cwd(), "data");
-  await mkdir(dataDir, { recursive: true });
-  await appendFile(path.join(dataDir, "orders.jsonl"), `${JSON.stringify(order)}\n`, "utf8");
+  let stored = true;
+  try {
+    const dataDir = path.join(process.cwd(), "data");
+    await mkdir(dataDir, { recursive: true });
+    await appendFile(path.join(dataDir, "orders.jsonl"), `${JSON.stringify(order)}\n`, "utf8");
+  } catch {
+    stored = false;
+  }
 
   return NextResponse.json({
     ok: true,
     orderId,
-    message: "Order saved. Send the matching payment receipt and an unlock code can be issued."
+    stored,
+    supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "you@example.com",
+    message:
+      "Order reference created. Email the PayPal receipt with this order ID to receive an unlock code."
   });
 }

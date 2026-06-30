@@ -39,7 +39,7 @@ test("checkout form can submit a manual order", async ({ page }) => {
   await page.getByLabel("Payment reference").fill("TEST-RECEIPT-123");
   await page.getByLabel("What do you need cleaned?").fill("Gumroad export with duplicate rows.");
   await page.getByRole("button", { name: /submit order/i }).click();
-  await expect(page.getByText(/order saved/i)).toBeVisible();
+  await expect(page.getByText(/order reference created/i)).toBeVisible();
 });
 
 test("mobile layout has no horizontal overflow", async ({ page }) => {

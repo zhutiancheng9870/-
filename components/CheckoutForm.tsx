@@ -6,6 +6,7 @@ import { FormEvent, useState } from "react";
 type OrderResponse = {
   ok: boolean;
   orderId?: string;
+  supportEmail?: string;
   message: string;
 };
 
@@ -93,6 +94,16 @@ export function CheckoutForm() {
               <>
                 {" "}
                 <span className="order-number">Order {status.orderId}</span>
+              </>
+            ) : null}
+            {status.ok && status.supportEmail ? (
+              <>
+                {" "}
+                Send the receipt to{" "}
+                <a href={`mailto:${status.supportEmail}?subject=CreatorCSV Cleaner order`}>
+                  {status.supportEmail}
+                </a>
+                .
               </>
             ) : null}
           </span>
