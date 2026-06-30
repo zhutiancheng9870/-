@@ -113,7 +113,9 @@ export function PayPalCheckout({ clientId, currency }: PayPalCheckoutProps) {
               }
             },
             onError: () => {
-              setMessage("PayPal checkout did not complete. Try again or contact support.");
+              setMessage(
+                "PayPal checkout did not complete. In sandbox mode, use a PayPal sandbox buyer account instead of your real PayPal login."
+              );
             }
           })
           .render("#paypal-button-container");

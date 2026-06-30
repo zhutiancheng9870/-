@@ -8,6 +8,7 @@ const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "you@example.com";
 const paypalEmail = process.env.NEXT_PUBLIC_PAYPAL_EMAIL || "";
 const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "";
 const paypalConfigured = isPayPalConfigured();
+const isSandbox = process.env.PAYPAL_ENV !== "live";
 const paymentInstructions =
   process.env.NEXT_PUBLIC_PAYMENT_INSTRUCTIONS ||
   "Pay with PayPal Goods and Services, then submit the receipt reference below.";
@@ -73,6 +74,14 @@ export default function CheckoutPage() {
                     contact {supportEmail}.
                   </p>
                 )}
+                {paypalConfigured && isSandbox ? (
+                  <div className="alert alert-error">
+                    <span>
+                      Test mode is on. Use a PayPal sandbox buyer account for testing. Real PayPal
+                      accounts and real cards will not complete until PAYPAL_ENV is switched to live.
+                    </span>
+                  </div>
+                ) : null}
               </div>
               <div className="feature">
                 <ShieldCheck className="icon" />
@@ -94,6 +103,12 @@ export default function CheckoutPage() {
                   Choose a plan, enter the email for your receipt, and complete PayPal Checkout.
                 </p>
                 <PayPalCheckout clientId={paypalClientId} currency={getPayPalCurrency()} />
+                {isSandbox ? (
+                  <p className="small-copy">
+                    Testing note: log in with a sandbox buyer from the PayPal Developer dashboard.
+                    This will not charge real money.
+                  </p>
+                ) : null}
               </>
             ) : (
               <>
