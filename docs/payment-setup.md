@@ -34,3 +34,9 @@ LICENSE_SIGNING_SECRET=...
 
 Webhook endpoints currently store payloads to local JSONL during MVP testing. PayPal capture stores
 paid orders and signed license keys the same way. Replace this with a database before production.
+
+## Current Production Check
+
+- Live checkout page renders PayPal SDK buttons.
+- `/api/paypal/create-order` returned `ok: true` for the Starter plan on the deployed Vercel site.
+- Capture was not tested against a real buyer payment.
