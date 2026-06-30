@@ -1,5 +1,6 @@
 import { createHash } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { verifySignedLicenseCode } from "@/lib/license";
 
 export const runtime = "nodejs";
 
@@ -34,6 +35,20 @@ export async function POST(request: NextRequest) {
       ok: true,
       message: "Unlock accepted. Full export is enabled for this browser session."
     });
+  }
+
+  try {
+    if (verifySignedLicenseCode(code)) {
+      return NextResponse.json({
+        ok: true,
+        message: "Paid unlock accepted. Full export is enabled for this browser session."
+      });
+    }
+  } catch {
+    return NextResponse.json(
+      { ok: false, message: "License verification is not fully configured yet." },
+      { status: 503 }
+    );
   }
 
   return NextResponse.json(

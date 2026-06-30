@@ -631,6 +631,20 @@ tr:last-child td {
   padding: 12px;
 }
 
+.license-box {
+  background: #f8fafb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.license-box label {
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
 @media (max-width: 980px) {
   .hero-grid,
   .checkout-layout,
