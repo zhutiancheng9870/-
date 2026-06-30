@@ -36,17 +36,16 @@ const PLAN_LABELS: Record<Plan, string> = {
 const LICENSE_STORAGE_KEY = "creatorcsv_unlock_code";
 
 export function PayPalCheckout({ clientId, currency }: PayPalCheckoutProps) {
-  const [email, setEmail] = useState("");
   const [plan, setPlan] = useState<Plan>("solo");
   const [message, setMessage] = useState("");
   const [licenseCode, setLicenseCode] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const latest = useRef({ email, plan });
+  const latest = useRef({ plan });
   const rendered = useRef(false);
 
   useEffect(() => {
-    latest.current = { email, plan };
-  }, [email, plan]);
+    latest.current = { plan };
+  }, [plan]);
 
   useEffect(() => {
     if (rendered.current) return;
@@ -80,10 +79,6 @@ export function PayPalCheckout({ clientId, currency }: PayPalCheckoutProps) {
               const current = latest.current;
               setMessage("");
               setLicenseCode("");
-              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(current.email)) {
-                setMessage("Enter a valid email before opening PayPal.");
-                throw new Error("Email is required.");
-              }
 
               const response = await fetch("/api/paypal/create-order", {
                 method: "POST",
@@ -104,7 +99,6 @@ export function PayPalCheckout({ clientId, currency }: PayPalCheckoutProps) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   orderId: data.orderID,
-                  email: current.email,
                   plan: current.plan
                 })
               });
@@ -137,18 +131,6 @@ export function PayPalCheckout({ clientId, currency }: PayPalCheckoutProps) {
 
   return (
     <div className="checkout-form" aria-label="Automated PayPal checkout">
-      <div className="field">
-        <label htmlFor="paypal-email">Email for unlock code</label>
-        <input
-          id="paypal-email"
-          name="paypal-email"
-          placeholder="you@example.com"
-          required
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-        />
-      </div>
       <div className="field">
         <label htmlFor="paypal-plan">Plan</label>
         <select

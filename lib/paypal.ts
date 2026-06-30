@@ -6,6 +6,9 @@ type PayPalOrderResponse = {
 type PayPalCaptureResponse = {
   id: string;
   status: string;
+  payer?: {
+    email_address?: string;
+  };
   purchase_units?: Array<{
     payments?: {
       captures?: Array<{
@@ -59,7 +62,7 @@ export function isPayPalConfigured(): boolean {
   );
 }
 
-export async function createPayPalOrder(plan: CheckoutPlan, email: string) {
+export async function createPayPalOrder(plan: CheckoutPlan) {
   const accessToken = await getAccessToken();
   const planInfo = PLANS[plan];
   const response = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders`, {
@@ -76,7 +79,7 @@ export async function createPayPalOrder(plan: CheckoutPlan, email: string) {
       },
       purchase_units: [
         {
-          custom_id: email,
+          custom_id: plan,
           description: planInfo.description,
           items: [
             {
@@ -142,6 +145,7 @@ export async function capturePayPalOrder(orderId: string, plan: CheckoutPlan) {
   return {
     orderId: data.id,
     captureId: capture.id,
+    payerEmail: data.payer?.email_address || "",
     amount: capture.amount.value,
     currency: capture.amount.currency_code
   };

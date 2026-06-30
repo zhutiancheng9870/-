@@ -14,11 +14,10 @@ export async function POST(request: NextRequest) {
 
   const body = (await request.json().catch(() => null)) as {
     orderId?: string;
-    email?: string;
     plan?: string;
   } | null;
 
-  if (!body?.orderId || !body.email || !isCheckoutPlan(body.plan)) {
+  if (!body?.orderId || !isCheckoutPlan(body.plan)) {
     return NextResponse.json(
       { ok: false, message: "Missing PayPal order details." },
       { status: 400 }
@@ -29,7 +28,7 @@ export async function POST(request: NextRequest) {
     const capture = await capturePayPalOrder(body.orderId, body.plan);
     const licenseCode = createSignedLicenseCode({
       orderId: capture.orderId,
-      email: body.email,
+      email: capture.payerEmail,
       plan: body.plan,
       issuedAt: new Date().toISOString()
     });

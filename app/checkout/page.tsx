@@ -100,7 +100,8 @@ export default function CheckoutPage() {
               <>
                 <h2>Pay automatically</h2>
                 <p className="small-copy">
-                  Choose a plan, enter the email for your receipt, and complete PayPal Checkout.
+                  Choose a plan and complete PayPal Checkout. The unlock code appears immediately
+                  after payment.
                 </p>
                 <PayPalCheckout clientId={paypalClientId} currency={getPayPalCurrency()} />
                 {isSandbox ? (
